@@ -1,0 +1,61 @@
+# Postgres
+
+SELECT count(*) FROM ls WHERE city = 'Waterloo';
+
+
+
+SELECT invoice_number, date, store_name, sale_usd
+FROM ls
+WHERE sale_usd BETWEEN 500 AND 5000
+ORDER BY sale_usd DESC;
+
+
+
+SELECT EXTRACT(YEAR FROM date) AS year,
+SUM(bottles_sold) AS total_bottles_sold,
+SUM(sale_usd) AS total_sale_usd
+FROM ls
+GROUP BY year
+ORDER BY SUM(sale_usd) DESC;
+
+
+
+SELECT store_number, SUM(pack) AS pack
+FROM ls
+GROUP BY store_number
+ORDER BY SUM(pack) DESC;
+
+
+
+SELECT store_number, vendor_number, SUM(bottles_sold) AS total_bottles_sold, SUM(sale_usd) AS total_sales_usd 
+FROM ls
+GROUP BY store_number, vendor_number
+HAVING SUM(bottles_sold) > 1000
+AND SUM(sale_usd) > 500000
+ORDER BY store_number, vendor_number DESC;
+
+
+
+SELECT store_name, address, city, county, bottles_sold
+FROM ls 
+WHERE bottles_sold > (SELECT AVG(bottles_sold) FROM ls)
+
+SELECT store_number, county, total_sales_usd
+FROM (
+        SELECT store_number, county,
+        SUM(sale_usd) AS total_sales_usd
+        FROM ls
+        GROUP BY store_number, county
+     ) AS store_sales
+WHERE
+    (county, total_sales_usd) IN (
+        SELECT county, MAX(total_sales_usd) AS max_sales
+        FROM (
+                SELECT county, store_number,
+                SUM(sale_usd) AS total_sales_usd
+                FROM ls
+                GROUP BY county, store_number
+             ) AS county_sales
+        GROUP BY county
+    )
+ORDER BY total_sales_usd DESC;
